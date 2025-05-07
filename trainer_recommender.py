@@ -1,6 +1,12 @@
 import streamlit as st
 import requests
 
+response = requests.post(
+    "https://trainer-matcher.onrender.com/match_trainers",
+    json={"skills": user_skills, "location": user_location},
+    timeout=10
+)
+
 st.set_page_config(page_title="Trainer Recommender", layout="wide")
 
 st.title("🔍 Trainer Recommender")

@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from pytrends.request import TrendReq
 from PIL import Image
+import time
+import random
 
 st.set_page_config(page_title="SkillConnectance", layout="wide")
 st.title("SkillConnectance: 💡 Learn Smarter")
@@ -17,11 +19,24 @@ except Exception as e:
     st.stop()
 
 # --- Caching for Google Trends ---
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=3600)  # Cache for 1 hour
 def fetch_trend_data(skill, region):
     pytrends = TrendReq()
-    pytrends.build_payload([skill], timeframe='today 12-m', geo=region.upper() if region else '')
-    return pytrends.interest_over_time()
+    retries = 3
+    for i in range(retries):
+        try:
+            pytrends.build_payload([skill], timeframe='today 12-m', geo=region.upper() if region else '')
+            trend_data = pytrends.interest_over_time()
+            return trend_data
+        except Exception as e:
+            if "429" in str(e):  # Handling rate limit errors
+                wait_time = random.randint(30, 60)  # Random backoff time between 30-60 seconds
+                st.warning(f"Rate limit exceeded. Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                raise e  # Raise the exception if it's not a rate limit issue
+    st.error("Unable to fetch trends after multiple attempts. Please try again later.")
+    return pd.DataFrame()
 
 # --- Interface: Two Tabs ---
 tab1, tab2 = st.tabs(["🔍 Trainer Recommender", "📈 Skill Demand Radar"])
@@ -77,13 +92,10 @@ with tab2:
             st.warning("Please enter a skill.")
         else:
             with st.spinner("Fetching Google Trends data..."):
-                try:
-                    trend_df = fetch_trend_data(radar_skill, region)
-                    if not trend_df.empty:
-                        st.success(f"Showing trends for **{radar_skill}** {'in ' + region.upper() if region else '(Worldwide)'}")
-                        st.line_chart(trend_df[radar_skill])
-                        st.caption(f"📅 Data from last 12 months via Google Trends")
-                    else:
-                        st.info("No trend data found for this skill.")
-                except Exception as e:
-                    st.error(f"Error fetching trends: {e}")
+                trend_df = fetch_trend_data(radar_skill, region)
+                if not trend_df.empty:
+                    st.success(f"Showing trends for **{radar_skill}** {'in ' + region.upper() if region else '(Worldwide)'}")
+                    st.line_chart(trend_df[radar_skill])
+                    st.caption(f"📅 Data from last 12 months via Google Trends")
+                else:
+                    st.info("No trend data found for this skill.")

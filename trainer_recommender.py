@@ -10,9 +10,14 @@ st.set_page_config(page_title="SkillConnectance", layout="wide")
 st.title("SkillConnectance: 💡 Learn Smarter")
 
 # GCC Countries list for location restriction
-GCC_COUNTRIES = [
-    "Bahrain", "Kuwait", "Oman", "Qatar", "Saudi Arabia", "United Arab Emirates"
-]
+GCC_COUNTRIES = {
+    "Bahrain": "BH",
+    "Kuwait": "KW",
+    "Oman": "OM",
+    "Qatar": "QA",
+    "Saudi Arabia": "SA",
+    "United Arab Emirates": "AE"
+}
 
 # Default trending skills
 TRENDING_SKILLS = ["AI", "Python", "Marketing", "Data Science", "Machine Learning", "Blockchain", "Digital Marketing"]
@@ -49,7 +54,9 @@ def fetch_trend_data(skill, region, timeframe):
 
 # --- User Input for Skills and Location ---
 skills_input = st.text_input("🧠 Enter skills you're looking for (comma-separated):", key="skills_input")
-location_input = st.selectbox("📍 Select your location:", options=GCC_COUNTRIES, index=0)
+
+# Location input - make sure we restrict this to GCC countries
+location_input = st.selectbox("📍 Select your location:", options=list(GCC_COUNTRIES.keys()), index=0)
 
 # Timeframe toggle (last 12 months or last 30 days)
 timeframe_option = st.radio("📅 Select trend period:", options=["Last 12 months", "Last 30 days"], index=0)
@@ -65,7 +72,10 @@ if st.button("Find Trainers & View Skill Trends"):
         # --- Trainer Recommender ---
         matches = df[df["Skills Taught"].apply(lambda skills: any(skill in skills for skill in user_skills))]
         if user_location:
-            matches = matches[matches["City"].str.contains(user_location)]
+            # Match location to its country code in GCC_COUNTRIES
+            country_code = GCC_COUNTRIES.get(location_input)
+            if country_code:
+                matches = matches[matches["City"].str.contains(user_location)]
 
         if not matches.empty:
             st.success(f"✅ Found {len(matches)} matching trainer(s):")
@@ -93,9 +103,9 @@ if st.button("Find Trainers & View Skill Trends"):
         timeframe = 'today 12-m' if timeframe_option == "Last 12 months" else 'today 30-d'
 
         with st.spinner("Fetching Google Trends data..."):
-            trend_df = fetch_trend_data(radar_skill, user_location, timeframe)
+            trend_df = fetch_trend_data(radar_skill, country_code, timeframe)
             if not trend_df.empty:
-                st.success(f"Showing trends for **{radar_skill}** in {user_location.capitalize()}")
+                st.success(f"Showing trends for **{radar_skill}** in {location_input.capitalize()}")
                 st.line_chart(trend_df[radar_skill])
                 st.caption(f"📅 Data from {timeframe_option} via Google Trends")
             else:

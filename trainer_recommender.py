@@ -67,9 +67,17 @@ if st.button("Find Trainers"):
                 with col2:
                     st.markdown(f"### {row['First Name']} {row['Last Name']}")
                     st.markdown(f"📍 **City:** {row['City'].capitalize()}")
-                    st.markdown(f"🛠️ **Skills:** {', '.join(row['Skills Taught'])}")
                     st.markdown(f"📅 **Experience:** {row['Years of Experience']} years")
                     st.markdown(f"📝 **Bio:** {row['Short Bio']}")
+
+                    # Show Skills with Categories
+                    categories = set()
+                    for skill in row['Skills Taught']:
+                        category = skill_to_category.get(skill.strip(), "Uncategorized")
+                        categories.add(category)
+                    st.markdown(f"🛠️ **Skills by Categories:** {', '.join(categories)}")
+
+                    # Show LinkedIn profile if available
                     if pd.notna(row['LinkedIn Profile URL']):
                         st.markdown(f"[🔗 Connect on LinkedIn]({row['LinkedIn Profile URL']})", unsafe_allow_html=True)
 

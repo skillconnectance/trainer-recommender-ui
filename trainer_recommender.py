@@ -15,23 +15,27 @@ except Exception as e:
     st.error(f"Error loading trainer data: {e}")
     st.stop()
 
-# Preprocess skill column
+# Preprocess skill columns and add categories
 df["Skills Taught"] = df["Skills Taught"].fillna("").apply(lambda x: [s.strip().lower() for s in x.split(",")])
+df["Skill Categories"] = df["Skill Categories"].fillna("").apply(lambda x: [s.strip().lower() for s in x.split(",")])
 df["City"] = df["City"].fillna("").str.lower()
 
-# User input
+# User input for skills and categories
 skills_input = st.text_input("🧠 Enter skills you're looking for (comma-separated):")
+categories_input = st.text_input("🔖 Enter categories you're interested in (comma-separated):")
 location_input = st.text_input("📍 Enter your location:")
 
 if st.button("Find Trainers"):
     user_skills = [skill.strip().lower() for skill in skills_input.split(",") if skill.strip()]
+    user_categories = [category.strip().lower() for category in categories_input.split(",") if category.strip()]
     user_location = location_input.strip().lower()
 
-    if not user_skills:
-        st.warning("Please enter at least one skill.")
+    if not user_skills and not user_categories:
+        st.warning("Please enter at least one skill or category.")
     else:
-        # Match logic
-        matches = df[df["Skills Taught"].apply(lambda skills: any(skill in skills for skill in user_skills))]
+        # Match logic: Skills + Categories
+        matches = df[df["Skills Taught"].apply(lambda skills: any(skill in skills for skill in user_skills)) | df["Skill Categories"].apply(lambda categories: any(category in categories for category in user_categories))]
+        
         if user_location:
             matches = matches[matches["City"].str.contains(user_location)]
 

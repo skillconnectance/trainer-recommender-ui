@@ -56,3 +56,23 @@ if st.button("Find Trainers"):
             st.success(f"✅ Found {len(matches)} matching trainer(s):")
             for _, row in matches.iterrows():
                 # Layout in two columns
+                col1, col2 = st.columns([1, 3])
+
+                with col1:
+                    if isinstance(row['Profile Picture Upload'], str) and row['Profile Picture Upload'].startswith("http"):
+                        st.image(row['Profile Picture Upload'], width=120)
+                    else:
+                        st.image("https://via.placeholder.com/120", width=120)
+
+                with col2:
+                    st.markdown(f"### {row['First Name']} {row['Last Name']}")
+                    st.markdown(f"📍 **City:** {row['City'].capitalize()}")
+                    st.markdown(f"🛠️ **Skills:** {', '.join(row['Skills Taught'])}")
+                    st.markdown(f"📅 **Experience:** {row['Years of Experience']} years")
+                    st.markdown(f"📝 **Bio:** {row['Short Bio']}")
+                    if pd.notna(row['LinkedIn Profile URL']):
+                        st.markdown(f"[🔗 Connect on LinkedIn]({row['LinkedIn Profile URL']})", unsafe_allow_html=True)
+
+                st.markdown("---")
+        else:
+            st.warning("⚠️ No matching trainers found.")
